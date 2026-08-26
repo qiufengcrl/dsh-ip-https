@@ -1,0 +1,6 @@
+# Install: dsh plugin --profile web add dsh-ip-https
+# (or: dsh plugin --profile web add /absolute/path/to/dsh-ip-https)
+- insert:
+    - id: dsh-ip-https
+      name: dsh-ip-https
+      config: {}

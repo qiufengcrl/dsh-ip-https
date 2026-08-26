@@ -1,0 +1,58 @@
+{
+  "name": "dsh-ip-https",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness plugin: remote settings + Let's Encrypt IP certificates. No domain, no login.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "曹如林",
+    "url": "https://github.com/qiufengcrl"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qiufengcrl/dsh-ip-https.git"
+  },
+  "homepage": "https://github.com/qiufengcrl/dsh-ip-https#readme",
+  "bugs": {
+    "url": "https://github.com/qiufengcrl/dsh-ip-https/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "lets-encrypt",
+    "ip-certificate"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "acme-client": "^5.4.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.1 <5"
+  }
+}
