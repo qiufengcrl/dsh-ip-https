@@ -25,10 +25,16 @@ export function apply(ctx, config = {}) {
     let closed = false
     let gateway
     let renewTimer
-    const unsubIndex = typeof ctx.webServer.tapIndex === 'function'
-      ? ctx.webServer.tapIndex(injectBootstrap)
+    // Capture inject services while the plugin context is active. HTTP/HTTPS
+    // callbacks and work after the first await must not touch ctx.webServer —
+    // Cordis throws "inactive context" and that crash takes down all of dsh web.
+    const webServer = ctx.webServer
+    const backendPortNumber = Number(webServer.port)
+    const backendPort = () => backendPortNumber
+    const unsubIndex = typeof webServer.tapIndex === 'function'
+      ? webServer.tapIndex(injectBootstrap)
       : undefined
-    const unsubHeaders = patchWebServerHeaders(ctx.webServer, () => Number(ctx.webServer.port))
+    const unsubHeaders = patchWebServerHeaders(webServer, backendPort)
     if (!unsubHeaders) ctx.logger.warn('dsh-ip-https: could not patch webServer headers; nginx IP access may still 403')
 
     const run = (async () => {
@@ -43,7 +49,6 @@ export function apply(ctx, config = {}) {
       if (state.publicIp) ctx.logger.info(`dsh-ip-https public IP: ${state.publicIp}`)
 
       let tlsContext = await loadTlsContext(dir)
-      const backendPort = () => Number(ctx.webServer.port)
 
       gateway = createGateway({
         listenHost: cfg.listenHost,

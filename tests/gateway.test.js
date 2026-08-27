@@ -46,4 +46,25 @@ describe('gateway proxy', () => {
     assert.equal(seenHost, `127.0.0.1:${backendPort}`)
     assert.equal(httpStatus.http?.port > 0 || httpStatus.error, true)
   })
+
+  it('returns 502 instead of crashing when backendPort throws', async () => {
+    await gateway?.close()
+    gateway = createGateway({
+      listenHost: '127.0.0.1',
+      httpsPort: 443,
+      httpPort: 0,
+      fallbackPort: 0,
+      backendPort: () => {
+        throw new Error('cannot get required service "webServer" in inactive context')
+      },
+      publicHost: () => '127.0.0.1',
+      tlsContext: () => undefined,
+      tlsActive: () => false,
+    })
+    const httpsStatus = await gateway.startHttps()
+    const port = httpsStatus.fallback.port
+    const res = await fetch(`http://127.0.0.1:${port}/`)
+    assert.equal(res.status, 502)
+    assert.equal(await res.text(), 'upstream unavailable')
+  })
 })
