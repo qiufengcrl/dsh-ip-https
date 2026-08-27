@@ -3,6 +3,7 @@ import { createGateway } from './lib/gateway.js'
 import { detectPublicIPv4, isPublicIPv4 } from './lib/public-ip.js'
 import { dataDir, loadState, saveState } from './lib/state.js'
 import { issueIpCertificate, loadTlsContext, certNotAfter, shouldRenew } from './lib/acme-ip.js'
+import { publicUrl, listenHints } from './lib/announce.js'
 
 export const name = 'dsh-ip-https'
 export const inject = ['webServer']
@@ -57,6 +58,7 @@ export function apply(ctx, config = {}) {
 
       const needIssue = async () => {
         if (!cfg.autoTls || !isPublicIPv4(state.publicIp)) return false
+        if (!gateway.status().http) return false
         if (!tlsContext) return true
         return shouldRenew(certNotAfter(tlsContext.cert))
       }
@@ -86,15 +88,11 @@ export function apply(ctx, config = {}) {
 
       const st = gateway.status()
       ctx.logger.info(`dsh-ip-https listening ${JSON.stringify(st)}`)
-
-      const bound = st.https || st.fallback
-      if (bound && state.publicIp) {
-        const scheme = st.tls ? 'https' : 'http'
-        const portPart = (scheme === 'https' && bound.port === 443) || (scheme === 'http' && bound.port === 80)
-          ? ''
-          : `:${bound.port}`
-        ctx.logger.info(`dsh-ip-https URL: ${scheme}://${state.publicIp}${portPart}/`)
+      for (const hint of listenHints(st, { httpPort: cfg.httpPort, httpsPort: cfg.httpsPort })) {
+        ctx.logger.warn(`dsh-ip-https: ${hint}`)
       }
+      const url = publicUrl(st, state.publicIp)
+      if (url) ctx.logger.info(`dsh-ip-https URL: ${url}`)
 
       renewTimer = setInterval(() => {
         if (closed) return

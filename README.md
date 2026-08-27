@@ -12,6 +12,26 @@ DeepSeek Harness 插件：远程浏览器能改设置，并用 Let’s Encrypt *
 2. **改头**：把 `Host` / `Origin` 改成 `127.0.0.1:<dsh端口>`，特权 RPC 和 pocket 的 `tunnel.start` 不再 403。
 3. **自动 HTTPS**：探测公网 IP，申请 Let’s Encrypt `shortlived` IP 证书（约 6 天），80 跳 443，到期前约 48 小时自动续。
 
+## 未装插件时
+
+公网用 `http://<IP>:<端口>` 打开（不是 HTTPS、也不是本机），浏览器没有安全上下文，`crypto.randomUUID` 不可用，设置页和工作区会直接报错：
+
+**模型加载失败**
+
+![模型页：crypto.randomUUID is not a function](docs/before-models.png)
+
+**Agent 预设加载失败**
+
+![设置里的 Agent 预设：crypto.randomUUID is not a function](docs/before-agent-preset.png)
+
+![通用设置里的预设下拉：crypto.randomUUID is not a function](docs/before-general.png)
+
+**选择工作区目录失败**
+
+![选择工作区目录：crypto.randomUUID is not a function](docs/before-workspace.png)
+
+装上本插件后走 `https://<公网IP>/`，并注入 polyfill，这些页面可以正常打开、远程改设置。
+
 ## 安装 / 更新
 
 需要已经能跑的 `dsh`（Node 22.5+），以及本机 `openssl`（生成带 IP SAN 的 CSR）。80/443 要对公网开放（安全组 + 防火墙）。
@@ -34,14 +54,16 @@ dsh plugin --profile web update dsh-ip-https@latest
 dsh web
 ```
 
-日志里会打印访问地址，例如 `https://203.0.113.10/`。
+启动后看终端里的 `dsh-ip-https URL`，用那一行打开即可。不必事先判断本机有没有 nginx。
 
-## 80 / 443 已被占用
+## 已经有 nginx / Caddy 时
 
-nginx / Caddy 已经占着 80/443 时，插件会：
+插件**不会改**你现有的反代配置。80 或 443 被占时会自己退让，并在日志里写明原因和真正能打开的地址：
 
-- 443 改听 `3443`（可配）
-- 80 占不住则 **签不了证、也不会 80→443**
+- **443 被占**：改听 `3443`（可配），用 `https://<公网IP>:3443/`
+- **80 被占**：签不了 Let’s Encrypt IP 证书，也没有 80→443；远程改设置仍然有效
+
+想用 `https://<公网IP>/`：停掉占用 80/443 的程序后重启 `dsh`。继续用现有 nginx 当入口时，把上游指到日志里的端口，并把 `Host` 设成 `127.0.0.1:<dsh端口>`，否则特权 RPC 会 403。
 
 在 profile 的 `cordis.patch.yml` 里可改：
 

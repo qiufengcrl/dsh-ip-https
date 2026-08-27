@@ -15,6 +15,7 @@
     "index.js",
     "lib",
     "cordis.patch.yml",
+    "docs",
     "README.md",
     "LICENSE"
   ],
