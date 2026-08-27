@@ -54,16 +54,20 @@ dsh plugin --profile web update dsh-ip-https@latest
 dsh web
 ```
 
-启动后看终端里的 `dsh-ip-https URL`，用那一行打开即可。不必事先判断本机有没有 nginx。
+启动后看终端里的 `dsh-ip-https URL`（没有 nginx 时用这一行）。已经用 nginx 反代 IP 的，继续打开原来的地址即可。
 
-## 已经有 nginx / Caddy 时
+## 已经有 nginx、用 IP 访问时
 
-插件**不会改**你现有的反代配置。80 或 443 被占时会自己退让，并在日志里写明原因和真正能打开的地址：
+**不用改 nginx。** 装上插件，还用原来的 `http://<公网IP>/`（或你在 nginx 里配的那个 IP 地址）。
 
-- **443 被占**：改听 `3443`（可配），用 `https://<公网IP>:3443/`
-- **80 被占**：签不了 Let’s Encrypt IP 证书，也没有 80→443；远程改设置仍然有效
+插件在 dsh 进程里做两件事，流量即使是 nginx → `127.0.0.1:3080` 也会生效：
 
-想用 `https://<公网IP>/`：停掉占用 80/443 的程序后重启 `dsh`。继续用现有 nginx 当入口时，把上游指到日志里的端口，并把 `Host` 设成 `127.0.0.1:<dsh端口>`，否则特权 RPC 会 403。
+1. 注入脚本：补上 `crypto.randomUUID`，并让设置页按本机模式写入
+2. 改 `Host` / `Origin`：特权 RPC 不再 403
+
+因为 80/443 已被 nginx 占用，本插件**签不了** `https://<公网IP>/` 那种 IP 证书。HTTPS 仍由你现有的 nginx 负责（有就有，没有就还是 HTTP，但设置页可以工作）。
+
+想改用插件自己的 `https://<公网IP>/`：让 nginx 不要占 80/443，再重启 `dsh`。
 
 在 profile 的 `cordis.patch.yml` 里可改：
 

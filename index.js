@@ -4,6 +4,7 @@ import { detectPublicIPv4, isPublicIPv4 } from './lib/public-ip.js'
 import { dataDir, loadState, saveState } from './lib/state.js'
 import { issueIpCertificate, loadTlsContext, certNotAfter, shouldRenew } from './lib/acme-ip.js'
 import { publicUrl, listenHints } from './lib/announce.js'
+import { patchWebServerHeaders } from './lib/inbound.js'
 
 export const name = 'dsh-ip-https'
 export const inject = ['webServer']
@@ -27,6 +28,8 @@ export function apply(ctx, config = {}) {
     const unsubIndex = typeof ctx.webServer.tapIndex === 'function'
       ? ctx.webServer.tapIndex(injectBootstrap)
       : undefined
+    const unsubHeaders = patchWebServerHeaders(ctx.webServer, () => Number(ctx.webServer.port))
+    if (!unsubHeaders) ctx.logger.warn('dsh-ip-https: could not patch webServer headers; nginx IP access may still 403')
 
     const run = (async () => {
       const dir = dataDir()
@@ -115,6 +118,7 @@ export function apply(ctx, config = {}) {
       closed = true
       if (renewTimer) clearInterval(renewTimer)
       unsubIndex?.()
+      unsubHeaders?.()
       void gateway?.close()
     }
   }, 'dsh-ip-https')

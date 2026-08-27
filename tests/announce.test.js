@@ -21,6 +21,7 @@ describe('listenHints', () => {
       fallback: { port: 3443 },
     })
     assert.equal(hints.some((line) => line.includes('已被占用')), true)
+    assert.equal(hints.some((line) => line.includes('原来的外网地址')), true)
     assert.equal(hints.some((line) => line.includes('3443')), true)
   })
 
