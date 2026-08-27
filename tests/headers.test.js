@@ -17,6 +17,7 @@ describe('forwardHeaders', () => {
     assert.equal(headers.origin, 'http://127.0.0.1:3080')
     assert.equal(headers['sec-fetch-site'], 'same-origin')
     assert.equal(headers['x-forwarded-host'], undefined)
+    assert.equal(headers['x-forwarded-for'], undefined)
     assert.equal(headers.accept, 'application/json')
   })
 })
@@ -28,11 +29,17 @@ describe('pinIncomingHeaders', () => {
         host: '203.0.113.10',
         origin: 'http://203.0.113.10',
         'x-forwarded-host': '203.0.113.10',
+        'x-forwarded-for': '203.0.113.10',
+        'x-real-ip': '203.0.113.10',
       },
     }
     pinIncomingHeaders(req, 3080)
     assert.equal(req.headers.host, '127.0.0.1:3080')
     assert.equal(req.headers.origin, 'http://127.0.0.1:3080')
     assert.equal(req.headers['x-forwarded-host'], undefined)
+    assert.equal(req.headers['x-forwarded-for'], undefined)
+    assert.equal(req.headers['x-real-ip'], undefined)
+    const originHost = new URL(req.headers.origin).host
+    assert.equal(originHost, req.headers.host)
   })
 })
