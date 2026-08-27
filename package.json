@@ -1,6 +1,6 @@
 {
   "name": "dsh-ip-https",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DeepSeek Harness plugin: remote settings + Let's Encrypt IP certificates. No domain, no login.",
   "publishConfig": {
     "access": "public"
