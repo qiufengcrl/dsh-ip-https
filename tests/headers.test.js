@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { forwardHeaders, loopbackAuthority, pinIncomingHeaders } from '../lib/headers.js'
+import { forwardHeaders, loopbackAuthority, pinIncomingHeaders, sanitizeResponseHeaders } from '../lib/headers.js'
 
 describe('forwardHeaders', () => {
   it('rewrites Host and Origin to loopback and drops spoofable forwarding', () => {
@@ -41,5 +41,18 @@ describe('pinIncomingHeaders', () => {
     assert.equal(req.headers['x-real-ip'], undefined)
     const originHost = new URL(req.headers.origin).host
     assert.equal(originHost, req.headers.host)
+  })
+})
+
+describe('sanitizeResponseHeaders', () => {
+  it('forwards Set-Cookie so dsh web can keep the browser signed in', () => {
+    const headers = sanitizeResponseHeaders({
+      'content-type': 'text/html',
+      'set-cookie': ['dsh-auth-x=abc; Path=/; HttpOnly', 'other=1; Path=/'],
+      connection: 'keep-alive',
+    })
+    assert.deepEqual(headers['set-cookie'], ['dsh-auth-x=abc; Path=/; HttpOnly', 'other=1; Path=/'])
+    assert.equal(headers['content-type'], 'text/html')
+    assert.equal(headers.connection, undefined)
   })
 })

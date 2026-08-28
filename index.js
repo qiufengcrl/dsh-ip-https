@@ -7,7 +7,7 @@ import { publicUrl, listenHints } from './lib/announce.js'
 import { patchWebServerHeaders } from './lib/inbound.js'
 
 export const name = 'dsh-ip-https'
-export const inject = ['webServer']
+export const inject = ['webServer', 'connection']
 
 export function apply(ctx, config = {}) {
   const cfg = {
@@ -16,6 +16,7 @@ export function apply(ctx, config = {}) {
     httpPort: Number(config.httpPort ?? 80),
     fallbackPort: Number(config.fallbackPort ?? 3443),
     autoTls: config.autoTls !== false,
+    autoLogin: config.autoLogin !== false,
     publicIp: String(config.publicIp ?? '').trim(),
     acmeEmail: String(config.acmeEmail ?? '').trim(),
     acmeStaging: config.acmeStaging === true,
@@ -29,6 +30,10 @@ export function apply(ctx, config = {}) {
     // callbacks and work after the first await must not touch ctx.webServer —
     // Cordis throws "inactive context" and that crash takes down all of dsh web.
     const webServer = ctx.webServer
+    const connection = ctx.connection
+    const authenticatedUrl = typeof connection?.authenticatedUrl === 'function'
+      ? connection.authenticatedUrl.bind(connection)
+      : undefined
     const backendPortNumber = Number(webServer.port)
     const backendPort = () => backendPortNumber
     const unsubIndex = typeof webServer.tapIndex === 'function'
@@ -60,6 +65,12 @@ export function apply(ctx, config = {}) {
         tlsContext: () => tlsContext,
         tlsActive: () => Boolean(tlsContext),
         log: (msg) => ctx.logger.warn(`dsh-ip-https: ${msg}`),
+        loginUrl: () => {
+          if (!cfg.autoLogin || typeof authenticatedUrl !== 'function') return undefined
+          const url = publicUrl(gateway.status(), state.publicIp)
+          if (!url) return undefined
+          return authenticatedUrl(url)
+        },
       })
 
       await gateway.startHttp()

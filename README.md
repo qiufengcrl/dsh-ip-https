@@ -6,6 +6,8 @@ DeepSeek Harness 插件：远程浏览器能改设置，并用 Let’s Encrypt *
 
 公网打开后，谁能访问地址，谁就能改模型和在工作区跑命令。请自己用安全组 / VPN 限制来源。
 
+dsh 0.1.2 起，网页界面会要一次启动 token，再换成约 30 天的登录 cookie。本插件把 cookie 原样转给浏览器，并在打开 `https://<公网IP>/`（没有 cookie、也没有 `?token=`）时自动跳到**当前进程**的 token 地址。手机和电脑都只要收藏这个根地址，不必再去抄启动日志。能访问该 IP 的人同样会被自动放进（和「没有登录」一致）。不想自动放行时，把 `autoLogin` 设为 `false`。
+
 ## 做什么
 
 1. **远程设置**：往页面注入脚本，让设置页按本机模式写入 `settings.yaml`。
@@ -78,6 +80,7 @@ dsh web
 | `httpPort` | `80` | ACME + 跳转 |
 | `fallbackPort` | `3443` | 443 被占时的后备端口 |
 | `autoTls` | `true` | 自动申请 IP 证书 |
+| `autoLogin` | `true` | 无登录 cookie 时，把 `/` 转到当前进程的 `?token=` |
 | `publicIp` | 空 | 留空则自动探测 |
 | `acmeEmail` | 空 | 可选，到期通知 |
 | `acmeStaging` | `false` | `true` 走 LE 测试环境 |
